@@ -1,137 +1,83 @@
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from ibm_watsonx_ai import APIClient
-from ibm_watsonx_ai.foundation_models import Model
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+import requests
 import os
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
-# IBM Watsonx Credentials
-BASE_URL = os.getenv("BASE_URL")
-API_KEY = os.getenv("API_KEY")
-MODEL_ID = os.getenv("MODEL_ID")
-PROJECT_ID = os.getenv("PROJECT_ID")
-
-# Initialize FastAPI
 app = FastAPI()
 
-# Enable CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+API_KEY = os.getenv("API_KEY")
+PROJECT_ID = os.getenv("PROJECT_ID")
+MODEL_ID = os.getenv("MODEL_ID")
+WATSONX_URL = os.getenv("WATSONX_URL")
 
-# Initialize IBM Model
-try:
-    creds = Credentials(url=BASE_URL, api_key=API_KEY)
-    model = ModelInference(
-        model_id=MODEL_ID,
-        credentials=creds,
-        project_id=PROJECT_ID
-    )
-    params = {"decoding_method": "greedy", "max_new_tokens": 300, "min_new_tokens": 10}
+class ChatRequest(BaseModel):
+    user_input: str
 
-except Exception as e:
-    print(f"Error initializing model: {e}")
-    model = None
+class SymptomRequest(BaseModel):
+    symptoms: list
 
-# Utility to safely parse model responses
-def parse_response(response):
-    print(f"Raw Response: {response}")
-    if isinstance(response, str):
-        return response
-    elif isinstance(response, list):
-        return response[0]["generated_text"]
-    elif isinstance(response, dict) and "results" in response:
-        return response["results"][0]["generated_text"]
+def get_token():
+    url = "https://iam.cloud.ibm.com/identity/token"
+    headers = {"Content-Type": "application/x-www-form-urlencoded"}
+    data = f"apikey={API_KEY}&grant_type=urn:ibm:params:oauth:grant-type:apikey"
+    response = requests.post(url, headers=headers, data=data)
+    if response.status_code == 200:
+        return response.json()["access_token"]
+    return None
+
+def granite_response(prompt):
+    token = get_token()
+    if not token:
+        return "Error: Authentication failed."
+
+    url = f"{WATSONX_URL}/ml/v1/text/chat?version=2023-05-29"
+    headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {token}"
+    }
+
+    body = {
+        "messages": [
+            {"role": "system", "content": "You are a helpful, cautious AI health assistant named HealthAI."},
+            {"role": "user", "content": prompt}
+        ],
+        "project_id": PROJECT_ID,
+        "model_id": MODEL_ID,
+        "max_tokens": 2000,
+        "temperature": 0
+    }
+
+    response = requests.post(url, headers=headers, json=body)
+    if response.status_code == 200:
+        return response.json()['results'][0]['generated_text']
     else:
-        return "Unexpected response format."
+        return f"Error: {response.status_code} - {response.text}"
 
-# 1. Chat Assistant
 @app.post("/chat")
-async def chat(request: Request):
-    try:
-        data = await request.json()
-        user_input = data.get("user_input")
+def chat(request: ChatRequest):
+    reply = granite_response(request.user_input)
+    return {"response": reply}
 
-        if not user_input:
-            return {"response": "Please provide a query."}
+@app.post("/predict-disease")
+def predict_disease(request: SymptomRequest):
+    symptoms = ", ".join(request.symptoms)
+    prompt = f"Based on the symptoms: {symptoms}, what is the most likely disease?"
+    reply = granite_response(prompt)
+    return {"predicted_disease": reply}
 
-        response = model.generate_text(prompt=user_input, params=params)
-        reply = parse_response(response)
-        return {"response": reply}
+@app.post("/generate-treatment")
+def generate_treatment(request: ChatRequest):
+    prompt = f"Provide a detailed treatment plan for {request.user_input}."
+    reply = granite_response(prompt)
+    return {"treatment_plan": reply}
 
-    except Exception as e:
-        print(f"Backend Error: {e}")
-        return {"response": f"Error: {str(e)}"}
-
-# 2. Disease Predictor
-@app.post("/predict_disease")
-async def predict_disease(request: Request):
-    try:
-        data = await request.json()
-        symptoms = data.get("symptoms")
-
-        if not symptoms:
-            return {"prediction": "Please provide symptoms to predict the disease."}
-
-        prompt = f"Based on these symptoms: {symptoms}, what is the most likely disease?"
-        response = model.generate_text(prompt=prompt, params=params)
-        prediction = parse_response(response)
-        return {"prediction": prediction}
-
-    except Exception as e:
-        print(f"Backend Error: {e}")
-        return {"prediction": f"Error: {str(e)}"}
-
-# 3. Treatment Plan Generator
-@app.post("/generate_treatment")
-async def generate_treatment(request: Request):
-    try:
-        data = await request.json()
-        disease = data.get("disease")
-
-        if not disease:
-            return {"treatment_plan": "Please provide a disease name."}
-
-        prompt = f"Suggest a detailed treatment plan for {disease}."
-        response = model.generate_text(prompt=prompt, params=params)
-        treatment_plan = parse_response(response)
-        return {"treatment_plan": treatment_plan}
-
-    except Exception as e:
-        print(f"Backend Error: {e}")
-        return {"treatment_plan": f"Error: {str(e)}"}
-
-# 4. Health Analytics
-@app.post("/health_analytics")
-async def health_analytics(request: Request):
-    try:
-        data = await request.json()
-        health_data = data.get("health_data")
-
-        if not health_data:
-            return {"analytics": "Please provide health data for analysis."}
-
-        prompt = f"Analyze the following patient health data and provide detailed insights: {health_data}"
-        response = model.generate_text(prompt=prompt, params=params)
-        analytics = parse_response(response)
-        return {"analytics": analytics}
-
-    except Exception as e:
-        print(f"Backend Error: {e}")
-        return {"analytics": f"Error: {str(e)}"}
-
-
-        
-
-    
-        
-
-
-    
+@app.post("/health-analytics")
+def health_analytics(request: ChatRequest):
+    prompt = f"Analyze the following patient health data and provide insights:\n{request.user_input}"
+    reply = granite_response(prompt)
+    return {"analytics": reply}
