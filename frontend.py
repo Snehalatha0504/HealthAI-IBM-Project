@@ -62,15 +62,17 @@ with tabs[1]:
     st.markdown("Enter symptoms to predict the most likely disease.")
 
     symptoms_input = st.text_input("💡 Enter symptoms (separated by commas)")
-
-    if st.button("Predict Disease"):
-        if symptoms_input:
-            with st.spinner("Predicting..."):
-                try:
-                    symptoms_list = [s.strip() for s in symptoms_input.split(",")]
-                    res = requests.post(f"{backend_url}/predict-disease", json={"symptoms": symptoms_list})
-                    if res.status_code == 200:
-                        prediction = res.json().get("predicted_disease")
+if st.button("Predict Disease"):
+    if symptoms_input:
+        with st.spinner("Predicting..."):
+            try:
+                symptoms_list = [s.strip() for s in symptoms_input.split(",")]
+                res = requests.post(f"{backend_url}/predict-disease", json={"symptoms": symptoms_list})
+            except Exception as e:
+                st.error(f"Error: {e}")
+            else:
+                if res.status_code == 200:
+                    prediction = res.json().get("predicted_disease")
                     if prediction:
                         st.success(f"🩺 Predicted Disease: {prediction}")
                     else:
@@ -79,11 +81,12 @@ with tabs[1]:
                     st.error("Invalid input format. Please check your input.")
                 else:
                     st.error(f"Error: {res.status_code}")
-            except Exception as e:
-                st.error(f"Error: {e}")
     else:
         st.warning("Please enter symptoms to predict the disease.")
 
+
+    
+                    
 # --- Treatment Plan Generator ---
 with tabs[2]:
     st.subheader("💊 Treatment Plan Generator")
