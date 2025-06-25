@@ -67,7 +67,7 @@ with tabs[1]:
         if symptoms_input:
             with st.spinner("Predicting..."):
                 try:
-                    res = requests.post(f"{backend_url}/predict_disease", json={"symptoms": symptoms_input})
+                    res = requests.post(f"{backend_url}/predict-disease", json={"symptoms": symptoms_input})
                     if res.status_code == 200:
                         prediction = res.json().get("prediction")
                         st.success(f"🩺 Predicted Disease: {prediction}")
@@ -111,7 +111,7 @@ with tabs[3]:
         if analytics_input:
             with st.spinner("Analyzing..."):
                 try:
-                    res = requests.post(f"{backend_url}/health_analytics", json={"health_data": analytics_input})
+                    res = requests.post(f"{backend_url}/health-analytics", json={"health_data": analytics_input})
                     if res.status_code == 200:
                         analytics = res.json().get("analytics")
                         st.success(analytics)
