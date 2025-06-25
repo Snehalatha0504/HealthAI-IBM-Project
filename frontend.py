@@ -67,7 +67,7 @@ if st.button("Predict Disease"):
         with st.spinner("Predicting..."):
             try:
                 symptoms_list = [s.strip() for s in symptoms_input.split(",")]
-                res = requests.post(f"{backend_url}/predict-disease", json={"symptoms": symptoms_list})
+                res = requests.post(f"{backend_url}/predict-disease", json={"user_input": symptoms_input})
             except Exception as e:
                 st.error(f"Error: {e}")
             else:
