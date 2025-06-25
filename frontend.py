@@ -65,11 +65,12 @@ with tabs[1]:
 
     if st.button("Predict Disease"):
         if symptoms_input:
-            with st.spinner("Predicting..."):
+            with 
+    st.spinner("Predicting..."):
                 try:
-                    res = requests.post(f"{backend_url}/predict-disease", json={"user_input": symptoms_input})
+                    res = requests.post(f"{backend_url}/predict-disease", json={"symptoms": symptoms_input.split(" ,")})
                     if res.status_code == 200:
-                        prediction = res.json().get("prediction")
+                        prediction = res.json().get("predicted_disease")
                         st.success(f"🩺 Predicted Disease: {prediction}")
                     else:
                         st.error(f"Error: {res.status_code}")
