@@ -64,9 +64,9 @@ with tabs[1]:
     symptoms_input = st.text_input("💡 Enter symptoms (separated by commas)")
 
     if st.button("Predict Disease"):
-    if symptoms_input:
-        with st.spinner("Predicting..."):
-            try:
+        if symptoms_input:
+            with st.spinner("Predicting..."):
+                try:
                 symptoms_list = [s.strip() for s in symptoms_input.split(",")]
                 res = requests.post(f"{backend_url}/predict-disease", json={"symptoms": symptoms_list})
                 if res.status_code == 200:
