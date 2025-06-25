@@ -24,7 +24,8 @@ tabs = st.tabs([
 ])
 
 # Base URL of your FastAPI backend
-backend_url = "http://127.0.0.1:8000"
+backend_url = "https://sneha0504-healthai-backend.hf.space"
+
 
 # --- Chat Assistant ---
 with tabs[0]:
