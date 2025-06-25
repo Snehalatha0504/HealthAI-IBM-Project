@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from ibm_watsonx_ai import Credentials
-from ibm_watsonx_ai.foundation_models import ModelInference
+from ibm_watsonx_ai import APIClient
+from ibm_watsonx_ai.foundation_models import Model
 import os
 from dotenv import load_dotenv
 
