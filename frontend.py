@@ -65,7 +65,7 @@ with tabs[1]:
 
     if st.button("Predict Disease"):
         if symptoms_input:
-            with 
+            with
     st.spinner("Predicting..."):
                 try:
                     res = requests.post(f"{backend_url}/predict-disease", json={"symptoms": symptoms_input.split(" ,")})
