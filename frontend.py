@@ -67,10 +67,10 @@ with tabs[1]:
         if symptoms_input:
             with st.spinner("Predicting..."):
                 try:
-                symptoms_list = [s.strip() for s in symptoms_input.split(",")]
-                res = requests.post(f"{backend_url}/predict-disease", json={"symptoms": symptoms_list})
-                if res.status_code == 200:
-                    prediction = res.json().get("predicted_disease")
+                    symptoms_list = [s.strip() for s in symptoms_input.split(",")]
+                    res = requests.post(f"{backend_url}/predict-disease", json={"symptoms": symptoms_list})
+                    if res.status_code == 200:
+                        prediction = res.json().get("predicted_disease")
                     if prediction:
                         st.success(f"🩺 Predicted Disease: {prediction}")
                     else:
