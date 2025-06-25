@@ -89,7 +89,7 @@ with tabs[2]:
         if treatment_input:
             with st.spinner("Generating Treatment Plan..."):
                 try:
-                    res = requests.post(f"{backend_url}/generate_treatment", json={"disease": treatment_input})
+                    res = requests.post(f"{backend_url}/generate-treatment", json={"disease": treatment_input})
                     if res.status_code == 200:
                         treatment_plan = res.json().get("treatment_plan")
                         st.success(treatment_plan)
